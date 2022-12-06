@@ -1,8 +1,9 @@
 import * as hmUI from '@zos/ui'
 import { gettext } from 'i18n'
-import { log as Logger } from '@zos/utils'
 import { px } from '@zos/utils'
 import { getDeviceInfo } from '@zos/device'
+import { createWidget, widget, prop, align } from '@zos/ui'
+
 
 Page({
   build() {
@@ -24,8 +25,11 @@ Page({
       click_func: (button_widget) => {
         count1++
         if (count1 == 11) {
-          //games1++
+          games1++
           count1 = 0
+          gamesTotal1.setProperty(hmUI.prop.MORE, {
+            text: games1
+          })
         }
         button_widget.setProperty(hmUI.prop.MORE, {
           x: 0,
@@ -50,8 +54,11 @@ Page({
       click_func: (button_widget) => {
         count2++
         if (count2 == 11) {
-          //games2++
+          games2++
           count2 = 0
+          gamesTotal2.setProperty(hmUI.prop.MORE, {
+            text: games2
+          })
         }
         button_widget.setProperty(hmUI.prop.MORE, {
           x: 234,
@@ -64,7 +71,7 @@ Page({
     })
 
     const gamesTotal1 = hmUI.createWidget(hmUI.widget.TEXT, {
-      x: 110,
+      x: 100,
       y: 20,
       w: 288,
       h: 60,
@@ -103,8 +110,36 @@ Page({
       })
     })
 
+    hmUI.createWidget(hmUI.widget.BUTTON, {
+      x: 150,
+      y: 400,
+      w: 70,
+      h: 50,
+      normal_color: 0xfc6950,
+      press_color: 0xfeb4a8,
+      text: '-1',
+      text_size: 40,
+      color: 0xffffff,
+      radius: 20,
+      click_func: (button_widget) => {
+        count1--
+      }
+    })
 
-
-
+    hmUI.createWidget(hmUI.widget.BUTTON, {
+      x: 250,
+      y: 400,
+      w: 70,
+      h: 50,
+      normal_color: 0x2c79cc,
+      press_color: 0x5895f0,
+      text: '-1',
+      text_size: 40,
+      color: 0xffffff,
+      radius: 20,
+      click_func: (button_widget) => {
+        count2--
+      }
+    })
   }
 })
