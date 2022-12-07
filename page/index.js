@@ -6,6 +6,7 @@ Page({
     let scores2 = 0
     let games1 = 0
     let games2 = 0
+
     // Left widget with scores
     const scoresWidget1 = hmUI.createWidget(hmUI.widget.BUTTON, {
       x: 0,
@@ -68,7 +69,7 @@ Page({
 
     // Left widget with total games
     const gamesWidget1 = hmUI.createWidget(hmUI.widget.TEXT, {
-      x: 70,
+      x: 67,
       y: 25,
       w: 100,
       h: 60,
@@ -112,9 +113,9 @@ Page({
 
     // Left button to -1 of scores
     hmUI.createWidget(hmUI.widget.BUTTON, {
-      x: 130,
+      x: 150,
       y: 400,
-      w: 100,
+      w: 80,
       h: 55,
       normal_color: 0xfc6950,
       press_color: 0xfeb4a8,
@@ -123,6 +124,13 @@ Page({
       color: 0xffffff,
       radius: 20,
       click_func: (button_widget) => {
+        if (scores1 == 0 && games1 > 0) {
+          games1--
+          gamesWidget1.setProperty(hmUI.prop.MORE, {
+            text: games1
+          })
+        }
+
         if (scores1 > 0) {
           scores1--
           scoresWidget1.setProperty(hmUI.prop.MORE, {
@@ -138,10 +146,10 @@ Page({
 
     // Right button to -1 of scores
     hmUI.createWidget(hmUI.widget.BUTTON, {
-      x: 250,
+      x: 237,
       y: 400,
-      w: 70,
-      h: 50,
+      w: 80,
+      h: 55,
       normal_color: 0x2c79cc,
       press_color: 0x5895f0,
       text: '-1',
@@ -149,6 +157,13 @@ Page({
       color: 0xffffff,
       radius: 20,
       click_func: (button_widget) => {
+        if (scores2 == 0 && games2 > 0) {
+          games2--
+          gamesWidget2.setProperty(hmUI.prop.MORE, {
+            text: games2
+          })
+        }
+
         if (scores2 > 0) {
           scores2--
           scoresWidget2.setProperty(hmUI.prop.MORE, {
