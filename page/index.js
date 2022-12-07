@@ -1,33 +1,28 @@
 import * as hmUI from '@zos/ui'
-import { gettext } from 'i18n'
-import { px } from '@zos/utils'
-import { getDeviceInfo } from '@zos/device'
-import { createWidget, widget, prop, align } from '@zos/ui'
-
 
 Page({
   build() {
-    let count1 = 0
-    let count2 = 0
+    let scores1 = 0
+    let scores2 = 0
     let games1 = 0
     let games2 = 0
-
-    hmUI.createWidget(hmUI.widget.BUTTON, {
+    // Left widget with scores
+    const scoresWidget1 = hmUI.createWidget(hmUI.widget.BUTTON, {
       x: 0,
       y: 0,
       w: (466 - 233),
       h: 466,
       normal_color: 0x2c79cc,
       press_color: 0x5895f0,
-      text: count1,
+      text: scores1,
       text_size: 120,
       color: 0xfc6950,
       click_func: (button_widget) => {
-        count1++
-        if (count1 == 11) {
+        scores1++
+        if (scores1 == 11) {
           games1++
-          count1 = 0
-          gamesTotal1.setProperty(hmUI.prop.MORE, {
+          scores1 = 0
+          gamesWidget1.setProperty(hmUI.prop.MORE, {
             text: games1
           })
         }
@@ -36,27 +31,28 @@ Page({
           y: 0,
           w: (466 - 233),
           h: 466,
-          text: count1
+          text: scores1
         })
       }
     })
 
-    hmUI.createWidget(hmUI.widget.BUTTON, {
+    // Right widget with scores
+    const scoresWidget2 = hmUI.createWidget(hmUI.widget.BUTTON, {
       x: 234,
       y: 0,
       w: (466 - 233),
       h: 466,
       normal_color: 0xfc6950,
       press_color: 0xfeb4a8,
-      text: count2,
+      text: scores2,
       text_size: 120,
       color: 0x2c79cc,
       click_func: (button_widget) => {
-        count2++
-        if (count2 == 11) {
+        scores2++
+        if (scores2 == 11) {
           games2++
-          count2 = 0
-          gamesTotal2.setProperty(hmUI.prop.MORE, {
+          scores2 = 0
+          gamesWidget2.setProperty(hmUI.prop.MORE, {
             text: games2
           })
         }
@@ -65,56 +61,61 @@ Page({
           y: 0,
           w: (466 - 233),
           h: 466,
-          text: count2
+          text: scores2
         })
       }
     })
 
-    const gamesTotal1 = hmUI.createWidget(hmUI.widget.TEXT, {
-      x: 100,
-      y: 20,
-      w: 288,
+    // Left widget with total games
+    const gamesWidget1 = hmUI.createWidget(hmUI.widget.TEXT, {
+      x: 70,
+      y: 25,
+      w: 100,
       h: 60,
       color: 0xffffff,
       text_size: 50,
-      align_h: hmUI.align.LEFT,
-      align_v: hmUI.align.TOP,
+      align_h: hmUI.align.CENTER_H,
+      align_v: hmUI.align.CENTER_V,
       text_style: hmUI.text_style.NONE,
       text: games1
     })
 
-    gamesTotal1.addEventListener(hmUI.event.CLICK_DOWN, (info) => {
+    // Count +1 when click to the total games button
+    gamesWidget1.addEventListener(hmUI.event.CLICK_DOWN, (info) => {
       games1++
-      gamesTotal1.setProperty(hmUI.prop.MORE, {
+      gamesWidget1.setProperty(hmUI.prop.MORE, {
         text: games1
       })
     })
 
-    const gamesTotal2 = hmUI.createWidget(hmUI.widget.TEXT, {
-      x: 336,
-      y: 20,
-      w: 288,
+    // Right widget with total games
+    const gamesWidget2 = hmUI.createWidget(hmUI.widget.TEXT, {
+      x: 300,
+      y: 25,
+      w: 100,
       h: 60,
       color: 0xffffff,
       text_size: 50,
-      align_h: hmUI.align.LEFT,
-      align_v: hmUI.align.TOP,
+      align_h: hmUI.align.CENTER_H,
+      align_v: hmUI.align.CENTER_V,
       text_style: hmUI.text_style.NONE,
       text: games2
     })
 
-    gamesTotal2.addEventListener(hmUI.event.CLICK_DOWN, (info) => {
+    // Count +1 when click to the total games button
+    gamesWidget2.addEventListener(hmUI.event.CLICK_DOWN, (info) => {
       games2++
-      gamesTotal2.setProperty(hmUI.prop.MORE, {
+      gamesWidget2.setProperty(hmUI.prop.MORE, {
         text: games2
       })
     })
 
+    // Left button to -1 of scores
     hmUI.createWidget(hmUI.widget.BUTTON, {
-      x: 150,
+      x: 130,
       y: 400,
-      w: 70,
-      h: 50,
+      w: 100,
+      h: 55,
       normal_color: 0xfc6950,
       press_color: 0xfeb4a8,
       text: '-1',
@@ -122,10 +123,20 @@ Page({
       color: 0xffffff,
       radius: 20,
       click_func: (button_widget) => {
-        count1--
+        if (scores1 > 0) {
+          scores1--
+          scoresWidget1.setProperty(hmUI.prop.MORE, {
+            x: 0,
+            y: 0,
+            w: (466 - 233),
+            h: 466,
+            text: scores1
+          })
+        }
       }
     })
 
+    // Right button to -1 of scores
     hmUI.createWidget(hmUI.widget.BUTTON, {
       x: 250,
       y: 400,
@@ -138,7 +149,16 @@ Page({
       color: 0xffffff,
       radius: 20,
       click_func: (button_widget) => {
-        count2--
+        if (scores2 > 0) {
+          scores2--
+          scoresWidget2.setProperty(hmUI.prop.MORE, {
+            x: 234,
+            y: 0,
+            w: (466 - 233),
+            h: 466,
+            text: scores2
+          })
+        }
       }
     })
   }
