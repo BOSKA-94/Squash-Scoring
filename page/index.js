@@ -23,16 +23,26 @@ Page({
         if (scores1 == 11) {
           games1++
           scores1 = 0
+          scores2 = 0
           gamesWidget1.setProperty(hmUI.prop.MORE, {
             text: games1
           })
         }
+
         button_widget.setProperty(hmUI.prop.MORE, {
           x: 0,
           y: 0,
           w: (466 - 233),
           h: 466,
           text: scores1
+        })
+
+        scoresWidget2.setProperty(hmUI.prop.MORE, {
+          x: 234,
+          y: 0,
+          w: (466 - 233),
+          h: 466,
+          text: scores2
         })
       }
     })
@@ -52,17 +62,27 @@ Page({
         scores2++
         if (scores2 == 11) {
           games2++
+          scores1 = 0
           scores2 = 0
           gamesWidget2.setProperty(hmUI.prop.MORE, {
             text: games2
           })
         }
+
         button_widget.setProperty(hmUI.prop.MORE, {
           x: 234,
           y: 0,
           w: (466 - 233),
           h: 466,
           text: scores2
+        })
+
+        scoresWidget1.setProperty(hmUI.prop.MORE, {
+          x: 0,
+          y: 0,
+          w: (466 - 233),
+          h: 466,
+          text: scores1
         })
       }
     })
