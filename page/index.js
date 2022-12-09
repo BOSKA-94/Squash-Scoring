@@ -14,7 +14,7 @@ Page({
       w: (466 - 233),
       h: 466,
       normal_color: 0x2c79cc,
-      press_color: 0x5895f0,
+      press_color: 0x89b4f4,
       text: scores1,
       text_size: 120,
       color: 0xfc6950,
