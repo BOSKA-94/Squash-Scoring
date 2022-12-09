@@ -1,7 +1,7 @@
 {
   "configVersion": "v2",
   "app": {
-    "appId": 28628,
+    "appId": 1013947,
     "appName": "Squash Scoring",
     "appType": "app",
     "version": {
@@ -9,8 +9,8 @@
       "name": "1.0.0"
     },
     "icon": "icon.png",
-    "vender": "zepp",
-    "description": "Squash Scoring app"
+    "vender": "Boskaulov",
+    "description": "Squash Scoring app allows you to calculate scores and games"
   },
   "permissions": [
     "data:os.device.info",
@@ -55,6 +55,12 @@
   "i18n": {
     "en-US": {
       "appName": "Squash Scoring"
+    },
+    "ru-RU": {
+      "appName": "Очки в Сквош"
+    },
+    "pl-PL": {
+      "appName": "Wynik w Squash"
     }
   },
   "defaultLanguage": "en-US"
