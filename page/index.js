@@ -211,5 +211,52 @@ Page({
         }
       }
     })
+
+    // Reset button
+    hmUI.createWidget(hmUI.widget.BUTTON, {
+      x: 193,
+      y: 10,
+      w: 80,
+      h: 55,
+      normal_color: 0xbc4d43,
+      press_color: 0xFD1302,
+      text: 'Reset',
+      text_size: 30,
+      color: 0xffffff,
+      radius: 20,
+      click_func: (button_widget) => {
+        scores1 = 0
+        localStorage.setItem('scores1', scores1)
+        scoresWidget1.setProperty(hmUI.prop.MORE, {
+          x: 0,
+          y: 0,
+          w: (466 - 233),
+          h: 466,
+          text: scores1
+        })
+
+        scores2 = 0
+        localStorage.setItem('scores2', scores2)
+        scoresWidget2.setProperty(hmUI.prop.MORE, {
+          x: 234,
+          y: 0,
+          w: (466 - 233),
+          h: 466,
+          text: scores2
+        })
+
+        games1 = 0
+        localStorage.setItem('games1', games1)
+        gamesWidget1.setProperty(hmUI.prop.MORE, {
+          text: games1
+        })
+
+        games2 = 0
+        localStorage.setItem('games2', games2)
+        gamesWidget2.setProperty(hmUI.prop.MORE, {
+          text: games2
+        })
+      }
+    })
   }
 })
