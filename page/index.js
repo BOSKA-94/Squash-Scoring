@@ -1,11 +1,12 @@
 import * as hmUI from '@zos/ui'
+import { localStorage } from '@zos/storage'
 
 Page({
   build() {
-    let scores1 = 0
-    let scores2 = 0
-    let games1 = 0
-    let games2 = 0
+    let scores1 = localStorage.getItem('scores1', '0')
+    let scores2 = localStorage.getItem('scores2', '0')
+    let games1 = localStorage.getItem('games1', '0')
+    let games2 = localStorage.getItem('games2', '0')
 
     // Left widget with scores
     const scoresWidget1 = hmUI.createWidget(hmUI.widget.BUTTON, {
@@ -20,10 +21,14 @@ Page({
       color: 0xfc6950,
       click_func: (button_widget) => {
         scores1++
+        localStorage.setItem('scores1', scores1)
         if (scores1 == 11) {
           games1++
+          localStorage.setItem('games1', games1)
           scores1 = 0
+          localStorage.setItem('scores1', scores1)
           scores2 = 0
+          localStorage.setItem('scores2', scores2)
           gamesWidget1.setProperty(hmUI.prop.MORE, {
             text: games1
           })
@@ -60,10 +65,14 @@ Page({
       color: 0x2c79cc,
       click_func: (button_widget) => {
         scores2++
+        localStorage.setItem('scores2', scores2)
         if (scores2 == 11) {
           games2++
+          localStorage.setItem('games2', games2)
           scores1 = 0
+          localStorage.setItem('scores1', scores1)
           scores2 = 0
+          localStorage.setItem('scores2', scores2)
           gamesWidget2.setProperty(hmUI.prop.MORE, {
             text: games2
           })
@@ -104,6 +113,7 @@ Page({
     // Count +1 when click to the total games button
     gamesWidget1.addEventListener(hmUI.event.CLICK_DOWN, (info) => {
       games1++
+      localStorage.setItem('games1', games1)
       gamesWidget1.setProperty(hmUI.prop.MORE, {
         text: games1
       })
@@ -126,6 +136,7 @@ Page({
     // Count +1 when click to the total games button
     gamesWidget2.addEventListener(hmUI.event.CLICK_DOWN, (info) => {
       games2++
+      localStorage.setItem('games2', games2)
       gamesWidget2.setProperty(hmUI.prop.MORE, {
         text: games2
       })
@@ -146,6 +157,7 @@ Page({
       click_func: (button_widget) => {
         if (scores1 == 0 && games1 > 0) {
           games1--
+          localStorage.setItem('games1', games1)
           gamesWidget1.setProperty(hmUI.prop.MORE, {
             text: games1
           })
@@ -153,6 +165,7 @@ Page({
 
         if (scores1 > 0) {
           scores1--
+          localStorage.setItem('scores1', scores1)
           scoresWidget1.setProperty(hmUI.prop.MORE, {
             x: 0,
             y: 0,
@@ -179,6 +192,7 @@ Page({
       click_func: (button_widget) => {
         if (scores2 == 0 && games2 > 0) {
           games2--
+          localStorage.setItem('games2', games2)
           gamesWidget2.setProperty(hmUI.prop.MORE, {
             text: games2
           })
@@ -186,6 +200,7 @@ Page({
 
         if (scores2 > 0) {
           scores2--
+          localStorage.setItem('scores2', scores2)
           scoresWidget2.setProperty(hmUI.prop.MORE, {
             x: 234,
             y: 0,
