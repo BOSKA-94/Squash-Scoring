@@ -218,11 +218,11 @@ Page({
       y: 10,
       w: 80,
       h: 55,
-      normal_color: 0xbc4d43,
+      normal_color: 0xffffff,
       press_color: 0xFD1302,
       text: 'Reset',
-      text_size: 30,
-      color: 0xffffff,
+      text_size: 25,
+      color: 0x2c79cc,
       radius: 20,
       click_func: (button_widget) => {
         scores1 = 0
