@@ -1,9 +1,12 @@
 import * as hmUI from '@zos/ui'
 import { localStorage } from '@zos/storage'
+import { getDeviceInfo } from '@zos/device'
+
+// Get device dimensions
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = getDeviceInfo()
+const HALF_WIDTH = Math.floor(SCREEN_WIDTH / 2)
 
 // Constants
-const SCREEN_WIDTH = 466
-const HALF_WIDTH = 233
 const WINNING_SCORE = 11
 const COLORS = {
   player1Bg: 0x2c79cc,
@@ -95,10 +98,10 @@ Page({
 
     // Left widget with total games
     const gamesWidget1 = hmUI.createWidget(hmUI.widget.TEXT, {
-      x: 67,
-      y: 25,
-      w: 100,
-      h: 60,
+      x: Math.floor(SCREEN_WIDTH * 0.144),
+      y: Math.floor(SCREEN_HEIGHT * 0.054),
+      w: Math.floor(SCREEN_WIDTH * 0.215),
+      h: Math.floor(SCREEN_HEIGHT * 0.129),
       color: COLORS.white,
       text_size: 50,
       align_h: hmUI.align.CENTER_H,
@@ -116,10 +119,10 @@ Page({
 
     // Right widget with total games
     const gamesWidget2 = hmUI.createWidget(hmUI.widget.TEXT, {
-      x: 300,
-      y: 25,
-      w: 100,
-      h: 60,
+      x: Math.floor(SCREEN_WIDTH * 0.644),
+      y: Math.floor(SCREEN_HEIGHT * 0.054),
+      w: Math.floor(SCREEN_WIDTH * 0.215),
+      h: Math.floor(SCREEN_HEIGHT * 0.129),
       color: COLORS.white,
       text_size: 50,
       align_h: hmUI.align.CENTER_H,
@@ -137,10 +140,10 @@ Page({
 
     // Left button to -1 of scores
     hmUI.createWidget(hmUI.widget.BUTTON, {
-      x: 150,
-      y: 400,
-      w: 80,
-      h: 55,
+      x: Math.floor(SCREEN_WIDTH * 0.322),
+      y: Math.floor(SCREEN_HEIGHT * 0.858),
+      w: Math.floor(SCREEN_WIDTH * 0.172),
+      h: Math.floor(SCREEN_HEIGHT * 0.118),
       normal_color: COLORS.player2Bg,
       press_color: COLORS.player2Press,
       text: '-1',
@@ -164,10 +167,10 @@ Page({
 
     // Right button to -1 of scores
     hmUI.createWidget(hmUI.widget.BUTTON, {
-      x: 237,
-      y: 400,
-      w: 80,
-      h: 55,
+      x: Math.floor(SCREEN_WIDTH * 0.509),
+      y: Math.floor(SCREEN_HEIGHT * 0.858),
+      w: Math.floor(SCREEN_WIDTH * 0.172),
+      h: Math.floor(SCREEN_HEIGHT * 0.118),
       normal_color: COLORS.player1Bg,
       press_color: 0x5895f0,
       text: '-1',
@@ -191,10 +194,10 @@ Page({
 
     // Reset button
     hmUI.createWidget(hmUI.widget.BUTTON, {
-      x: 193,
-      y: 10,
-      w: 80,
-      h: 55,
+      x: Math.floor(SCREEN_WIDTH * 0.414),
+      y: Math.floor(SCREEN_HEIGHT * 0.021),
+      w: Math.floor(SCREEN_WIDTH * 0.172),
+      h: Math.floor(SCREEN_HEIGHT * 0.118),
       normal_color: COLORS.white,
       press_color: COLORS.resetPress,
       text: 'Reset',
