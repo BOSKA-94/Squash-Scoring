@@ -75,14 +75,6 @@
         {
           "name": "balance-2-global",
           "deviceSource": 9568513
-        },
-        {
-          "name": "active-max",
-          "deviceSource": 10813697
-        },
-        {
-          "name": "active-max-global",
-          "deviceSource": 10813699
         }
       ],
       "designWidth": 480
