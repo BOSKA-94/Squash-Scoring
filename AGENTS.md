@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-This is a squash scoring app for ZeppOS (Zepp smartwatch platform), supporting multiple devices including GTR-4, Balance, Active. The app tracks scores and games for two players using localStorage for persistence.
+This is a squash scoring app for ZeppOS (Zepp smartwatch platform), supporting multiple devices including GTR-4, Balance, Cheetah Pro. The app tracks scores and games for two players using localStorage for persistence.
 
 ## Architecture
 

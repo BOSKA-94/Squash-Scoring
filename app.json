@@ -16,7 +16,7 @@
   "runtime": {
     "apiVersion": {
       "compatible": "2.0.0",
-      "target": "3.0.0",
+      "target": "2.0.0",
       "minVersion": "2.0.0"
     }
   },
@@ -38,18 +38,6 @@
         {
           "name": "gtr4-w",
           "deviceSource": 7930113
-        },
-        {
-          "name": "active-2-round",
-          "deviceSource": 8913152
-        },
-        {
-          "name": "active-2-round-global",
-          "deviceSource": 8913153
-        },
-        {
-          "name": "t-rex-3",
-          "deviceSource": 9240576
         }
       ],
       "designWidth": 466
@@ -73,12 +61,12 @@
           "deviceSource": 8519937
         },
         {
-          "name": "balance-2",
-          "deviceSource": 9568512
+          "name": "cheetah-pro",
+          "deviceSource": 8126720
         },
         {
-          "name": "balance-2-global",
-          "deviceSource": 9568513
+          "name": "cheetah-pro-global",
+          "deviceSource": 8126721
         }
       ],
       "designWidth": 480
