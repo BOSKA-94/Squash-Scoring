@@ -2,22 +2,22 @@
 
 ## Project Overview
 
-This is a squash scoring app for ZeppOS (Zepp smartwatch platform), targeting GTR-4 devices with 466x466 resolution. The app tracks scores and games for two players using localStorage for persistence.
+This is a squash scoring app for ZeppOS (Zepp smartwatch platform), supporting multiple devices including GTR-4, Balance, Active. The app tracks scores and games for two players using localStorage for persistence.
 
 ## Architecture
 
 ### ZeppOS Structure
-This follows ZeppOS v2 app architecture:
+This follows ZeppOS v3 app architecture (backwards compatible with v2):
 - **app.js**: Entry point with lifecycle hooks (onCreate, onDestroy)
 - **page/index.js**: Main UI page with all scoring logic and widget management
 - **app-side/index.js**: Background service (minimal in this app - just i18n initialization)
 - **app.json**: App manifest with configuration, permissions, targets, and i18n support
-- **assets/**: Device-specific assets organized by resolution (466x466-gtr-4/)
+- **assets/**: Device-specific assets
 
 ### Key Technical Details
 - Uses `@zos/ui` for widget creation and event handling
 - Uses `@zos/storage` localStorage for persisting scores and games between sessions
-- Layout is hardcoded for 466x466 resolution (GTR-4 watch)
+- Layout is calculated dynamically based on device dimensions (responsive design)
 - TypeScript type definitions from `@zeppos/device-types` package
 - i18n support for en-US, ru-RU, pl-PL (using .po files in page/i18n/ and app-side/i18n/)
 
@@ -59,7 +59,7 @@ When editing code:
 - **Translations**: Add/edit .po files in page/i18n/ or app-side/i18n/
 
 ### Important Constraints
-- All coordinates and sizes are fixed for 466x466 resolution
+- Coordinates and sizes are calculated using `SCREEN_WIDTH` and `SCREEN_HEIGHT` to support multiple resolutions
 - Widgets must be created using hmUI.createWidget() with specific types (BUTTON, TEXT, etc.)
 - State management is entirely localStorage-based (no framework)
 - No test framework is currently configured
