@@ -1,12 +1,12 @@
 {
-  "configVersion": "v2",
+  "configVersion": "v3",
   "app": {
     "appId": 1013947,
     "appName": "Squash Scoring",
     "appType": "app",
     "version": {
-      "code": 2,
-      "name": "1.2.0"
+      "code": 3,
+      "name": "1.3.0"
     },
     "icon": "icon.png",
     "vender": "Boskaulov",
@@ -33,11 +33,87 @@
       "platforms": [
         {
           "name": "gtr4",
-          "deviceSource": 7930112
+          "deviceSource": 7930112,
+          "st": "r",
+          "sr": "w466"
         },
         {
-          "name": "gtr4-w",
-          "deviceSource": 7930113
+          "name": "gtr4-global",
+          "deviceSource": 7930113,
+          "st": "r",
+          "sr": "w466"
+        },
+        {
+          "name": "gtr4-variant",
+          "deviceSource": 7864577,
+          "st": "r",
+          "sr": "w466"
+        },
+        {
+          "name": "active2-round",
+          "deviceSource": 8913152,
+          "st": "r",
+          "sr": "w466"
+        },
+        {
+          "name": "active2-round-global",
+          "deviceSource": 8913153,
+          "st": "r",
+          "sr": "w466"
+        },
+        {
+          "name": "active2-round-variant-a",
+          "deviceSource": 8913155,
+          "st": "r",
+          "sr": "w466"
+        },
+        {
+          "name": "active2-round-variant-b",
+          "deviceSource": 8913159,
+          "st": "r",
+          "sr": "w466"
+        },
+        {
+          "name": "active2-round-v2",
+          "deviceSource": 10092800,
+          "st": "r",
+          "sr": "w466"
+        },
+        {
+          "name": "active2-round-v2-global",
+          "deviceSource": 10092801,
+          "st": "r",
+          "sr": "w466"
+        },
+        {
+          "name": "active2-round-v2-variant-a",
+          "deviceSource": 10092803,
+          "st": "r",
+          "sr": "w466"
+        },
+        {
+          "name": "active2-round-v2-variant-b",
+          "deviceSource": 10092807,
+          "st": "r",
+          "sr": "w466"
+        },
+        {
+          "name": "t-rex-3-pro-44",
+          "deviceSource": 10682624,
+          "st": "r",
+          "sr": "w466"
+        },
+        {
+          "name": "t-rex-3-pro-44-global",
+          "deviceSource": 10682625,
+          "st": "r",
+          "sr": "w466"
+        },
+        {
+          "name": "t-rex-3-pro-44-variant",
+          "deviceSource": 10682627,
+          "st": "r",
+          "sr": "w466"
         }
       ],
       "designWidth": 466
@@ -54,19 +130,99 @@
       "platforms": [
         {
           "name": "balance",
-          "deviceSource": 8519936
+          "deviceSource": 8519936,
+          "st": "r",
+          "sr": "w480"
         },
         {
           "name": "balance-global",
-          "deviceSource": 8519937
+          "deviceSource": 8519937,
+          "st": "r",
+          "sr": "w480"
+        },
+        {
+          "name": "balance-variant",
+          "deviceSource": 8519939,
+          "st": "r",
+          "sr": "w480"
         },
         {
           "name": "cheetah-pro",
-          "deviceSource": 8126720
+          "deviceSource": 8126720,
+          "st": "r",
+          "sr": "w480"
         },
         {
           "name": "cheetah-pro-global",
-          "deviceSource": 8126721
+          "deviceSource": 8126721,
+          "st": "r",
+          "sr": "w480"
+        },
+        {
+          "name": "t-rex-3",
+          "deviceSource": 8716544,
+          "st": "r",
+          "sr": "w480"
+        },
+        {
+          "name": "t-rex-3-global",
+          "deviceSource": 8716545,
+          "st": "r",
+          "sr": "w480"
+        },
+        {
+          "name": "t-rex-3-variant",
+          "deviceSource": 8716547,
+          "st": "r",
+          "sr": "w480"
+        },
+        {
+          "name": "balance2",
+          "deviceSource": 9568512,
+          "st": "r",
+          "sr": "w480"
+        },
+        {
+          "name": "balance2-global",
+          "deviceSource": 9568513,
+          "st": "r",
+          "sr": "w480"
+        },
+        {
+          "name": "balance2-variant",
+          "deviceSource": 9568515,
+          "st": "r",
+          "sr": "w480"
+        },
+        {
+          "name": "t-rex-3-pro-48",
+          "deviceSource": 10551552,
+          "st": "r",
+          "sr": "w480"
+        },
+        {
+          "name": "t-rex-3-pro-48-global",
+          "deviceSource": 10551553,
+          "st": "r",
+          "sr": "w480"
+        },
+        {
+          "name": "t-rex-3-pro-48-variant",
+          "deviceSource": 10551555,
+          "st": "r",
+          "sr": "w480"
+        },
+        {
+          "name": "active-max",
+          "deviceSource": 10813697,
+          "st": "r",
+          "sr": "w480"
+        },
+        {
+          "name": "active-max-global",
+          "deviceSource": 10813699,
+          "st": "r",
+          "sr": "w480"
         }
       ],
       "designWidth": 480

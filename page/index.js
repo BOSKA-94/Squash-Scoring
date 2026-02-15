@@ -4,7 +4,9 @@ import { getDeviceInfo } from '@zos/device'
 
 // Get device dimensions
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = getDeviceInfo()
-const HALF_WIDTH = Math.floor(SCREEN_WIDTH / 2)
+const LEFT_WIDTH = Math.floor(SCREEN_WIDTH / 2)
+const RIGHT_X = LEFT_WIDTH
+const RIGHT_WIDTH = SCREEN_WIDTH - RIGHT_X
 
 // Constants
 const WINNING_SCORE = 11
@@ -32,8 +34,8 @@ Page({
       if (x !== null) {
         props.x = x
         props.y = 0
-        props.w = HALF_WIDTH
-        props.h = SCREEN_WIDTH
+        props.w = x === 0 ? LEFT_WIDTH : RIGHT_WIDTH
+        props.h = SCREEN_HEIGHT
       }
       widget.setProperty(hmUI.prop.MORE, props)
     }
@@ -42,8 +44,9 @@ Page({
     const scoresWidget1 = hmUI.createWidget(hmUI.widget.BUTTON, {
       x: 0,
       y: 0,
-      w: HALF_WIDTH,
-      h: SCREEN_WIDTH,
+      w: LEFT_WIDTH,
+      h: SCREEN_HEIGHT,
+
       normal_color: COLORS.player1Bg,
       press_color: COLORS.player1Press,
       text: scores1,
@@ -63,16 +66,16 @@ Page({
         }
 
         updateWidget(button_widget, scores1, 0)
-        updateWidget(scoresWidget2, scores2, HALF_WIDTH + 1)
+        updateWidget(scoresWidget2, scores2, RIGHT_X)
       }
     })
 
     // Right widget with scores
     const scoresWidget2 = hmUI.createWidget(hmUI.widget.BUTTON, {
-      x: HALF_WIDTH + 1,
+      x: RIGHT_X,
       y: 0,
-      w: HALF_WIDTH,
-      h: SCREEN_WIDTH,
+      w: RIGHT_WIDTH,
+      h: SCREEN_HEIGHT,
       normal_color: COLORS.player2Bg,
       press_color: COLORS.player2Press,
       text: scores2,
@@ -91,7 +94,7 @@ Page({
           updateWidget(gamesWidget2, games2)
         }
 
-        updateWidget(button_widget, scores2, HALF_WIDTH + 1)
+        updateWidget(button_widget, scores2, RIGHT_X)
         updateWidget(scoresWidget1, scores1, 0)
       }
     })
@@ -187,7 +190,7 @@ Page({
         if (scores2 > 0) {
           scores2--
           localStorage.setItem('scores2', scores2)
-          updateWidget(scoresWidget2, scores2, HALF_WIDTH + 1)
+          updateWidget(scoresWidget2, scores2, RIGHT_X)
         }
       }
     })
@@ -216,7 +219,7 @@ Page({
         localStorage.setItem('games2', games2)
         
         updateWidget(scoresWidget1, scores1, 0)
-        updateWidget(scoresWidget2, scores2, HALF_WIDTH + 1)
+        updateWidget(scoresWidget2, scores2, RIGHT_X)
         updateWidget(gamesWidget1, games1)
         updateWidget(gamesWidget2, games2)
       }
