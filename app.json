@@ -5,8 +5,8 @@
     "appName": "Squash Scoring",
     "appType": "app",
     "version": {
-      "code": 3,
-      "name": "1.3.0"
+      "code": 2,
+      "name": "1.2.0"
     },
     "icon": "icon.png",
     "vender": "Boskaulov",
