@@ -1,12 +1,12 @@
 {
-  "name": "empty",
+  "name": "squash-scoring",
   "version": "1.0.0",
-  "description": "",
+  "description": "Squash scoring app for ZeppOS smartwatches",
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "author": "Boskaulov",
   "license": "ISC",
   "devDependencies": {
     "@zeppos/device-types": "^2.0.0"
