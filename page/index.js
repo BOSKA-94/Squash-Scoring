@@ -10,6 +10,7 @@ const RIGHT_WIDTH = SCREEN_WIDTH - RIGHT_X
 
 // Constants
 const WINNING_SCORE = 11
+const DEUCE_SCORE = WINNING_SCORE - 1
 const COLORS = {
   player1Bg: 0x2c79cc,
   player1Text: 0xfc6950,
@@ -40,6 +41,13 @@ Page({
       widget.setProperty(hmUI.prop.MORE, props)
     }
 
+    // Win condition: first to 11, but if 10–10 then win by 2.
+    const isGameWon = (myScore, otherScore) => {
+      if (myScore < WINNING_SCORE) return false
+      if (otherScore < DEUCE_SCORE) return myScore === WINNING_SCORE
+      return myScore - otherScore >= 2
+    }
+
     // Left widget with scores
     const scoresWidget1 = hmUI.createWidget(hmUI.widget.BUTTON, {
       x: 0,
@@ -55,7 +63,7 @@ Page({
       click_func: (button_widget) => {
         scores1++
         localStorage.setItem('scores1', scores1)
-        if (scores1 === WINNING_SCORE) {
+        if (isGameWon(scores1, scores2)) {
           games1++
           localStorage.setItem('games1', games1)
           scores1 = 0
@@ -84,7 +92,7 @@ Page({
       click_func: (button_widget) => {
         scores2++
         localStorage.setItem('scores2', scores2)
-        if (scores2 === WINNING_SCORE) {
+        if (isGameWon(scores2, scores1)) {
           games2++
           localStorage.setItem('games2', games2)
           scores1 = 0
