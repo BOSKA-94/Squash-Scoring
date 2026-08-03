@@ -12,12 +12,12 @@
     "vender": "Boskaulov",
     "description": "Squash Scoring app allows you to calculate scores and games"
   },
-  "permissions": ["data:os.device.info", "device:os.local_storage"],
+  "permissions": ["data:os.device.info", "device:os.local_storage", "data:user.hd.heart_rate"],
   "runtime": {
     "apiVersion": {
-      "compatible": "2.0.0",
-      "target": "2.0.0",
-      "minVersion": "2.0.0"
+      "compatible": "2.1.0",
+      "target": "2.1.0",
+      "minVersion": "2.1.0"
     }
   },
   "targets": {
