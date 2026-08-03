@@ -3,7 +3,13 @@ import { localStorage } from '@zos/storage'
 import { getDeviceInfo } from '@zos/device'
 import { getText } from '@zos/i18n'
 import { HeartRate, Vibrator, VIBRATOR_SCENE_DURATION } from '@zos/sensor'
-import { setPageBrightTime } from '@zos/display'
+import {
+  setPageBrightTime,
+  pauseDropWristScreenOff,
+  resetDropWristScreenOff,
+  pausePalmScreenOff,
+  resetPalmScreenOff
+} from '@zos/display'
 import {
   onGesture,
   offGesture,
@@ -74,7 +80,8 @@ const displayScore = (mine, theirs) => (isDeuce(mine, theirs) ? DEUCE_SCORE : mi
 const STORAGE_KEYS = {
   scores: ['scores1', 'scores2'],
   games: ['games1', 'games2'],
-  matchStartedAt: 'matchStartedAt'
+  matchStartedAt: 'matchStartedAt',
+  lastSeenAt: 'lastSeenAt'
 }
 
 const readCounter = (key) => {
@@ -188,6 +195,12 @@ const CROWN_DEGREE_THRESHOLD = 50
 // the app) is forgotten about rather than staying lit indefinitely.
 const KEEP_AWAKE_MS = 60000
 
+// If the app was closed for longer than this, the previous match is over and
+// forgotten rather than paused - no real squash match runs anywhere near an
+// hour, so on the next launch the timer starts over instead of showing
+// however long the watch sat closed.
+const MATCH_STALE_AFTER_MS = 60 * 60 * 1000
+
 const HEALTH_LAYOUT = {
   heartLabelY: rh(0.2),
   heartLabelH: rh(0.07),
@@ -228,8 +241,11 @@ Page({
 
     // A missing/zero timestamp means no match is in progress yet. Persisted
     // (rather than reset on every launch) so the timer survives the app
-    // being backgrounded, and only resets when resetAll() runs.
+    // being backgrounded, and only resets when resetAll() runs - unless the
+    // gap since it was last closed is long enough that the match is clearly
+    // over rather than just paused; see MATCH_STALE_AFTER_MS.
     let matchStartedAt = readTimestamp(STORAGE_KEYS.matchStartedAt)
+    const lastSeenAt = readTimestamp(STORAGE_KEYS.lastSeenAt)
 
     // Widget handles, populated further down. render() depends on all three
     // arrays being filled, so it must not run until build() has created them.
@@ -261,15 +277,23 @@ Page({
       localStorage.setItem(STORAGE_KEYS.matchStartedAt, String(matchStartedAt))
     }
 
-    if (!matchStartedAt) {
+    const matchIsStale = lastSeenAt > 0 && Date.now() - lastSeenAt > MATCH_STALE_AFTER_MS
+
+    if (!matchStartedAt || matchIsStale) {
       matchStartedAt = Date.now()
       persistMatchStartedAt()
     }
 
     // Re-armed on every score change; see KEEP_AWAKE_MS above for why this is
-    // a moderate window rather than one huge fixed value.
+    // a moderate window rather than one huge fixed value. setPageBrightTime
+    // alone only extends the *inactivity* timeout - it does nothing about the
+    // watch's separate drop-wrist/palm-cover screen-off, which fires on wrist
+    // orientation regardless of that timer. Mid-rally your wrist is rarely
+    // held flat facing you, so both of those need suspending too.
     const keepScreenAwake = () => {
       setPageBrightTime({ brightTime: KEEP_AWAKE_MS })
+      pauseDropWristScreenOff({ duration: KEEP_AWAKE_MS })
+      pausePalmScreenOff({ duration: KEEP_AWAKE_MS })
     }
 
     // ----------------------------------------------------------------
@@ -655,6 +679,11 @@ Page({
       stopHeartRateSensor()
       offGesture()
       offDigitalCrown()
+      resetDropWristScreenOff()
+      resetPalmScreenOff()
+      // Recorded on the way out so the next launch can tell how long the app
+      // sat closed, and decide whether the match timer is stale.
+      localStorage.setItem(STORAGE_KEYS.lastSeenAt, String(Date.now()))
     }
 
     // Draw the restored state. commit(false) rather than render() so a
