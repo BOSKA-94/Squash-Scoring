@@ -19,11 +19,11 @@ This follows ZeppOS v3 app architecture (backwards compatible with v2):
 - Uses `@zos/storage` localStorage for persisting scores and games between sessions
 - Layout is calculated dynamically based on device dimensions (responsive design)
 - TypeScript type definitions from `@zeppos/device-types` package
-- i18n support for en-US, ru-RU, pl-PL. Page strings live in `page/i18n/*.po` and are read via `gettext`; `app-side/i18n/` only has the en-US scaffold, since the app-side module has no user-facing strings.
+- i18n support for en-US, ru-RU, pl-PL. Page strings live in `page/i18n/*.po` and are read with `getText` from `@zos/i18n`. **Do not use `import { gettext } from 'i18n'` on the page** — that is the ZeppOS v1/v2 form, it silently returns nothing at API level 2.0+, and it once shipped a blank Reset button. `app-side/index.js` still uses the old `gettext` form because side-service code is a different runtime; `app-side/i18n/` only holds the en-US scaffold, since that module has no user-facing strings.
 
 ### Code structure (page/index.js)
 The page is organised as state → render, not as two mirrored player blocks. When changing behaviour, prefer extending these pieces over adding per-player branches:
-- **Module scope**: `rw()` / `rh()` ratio helpers, the `isGameWon` and `hasAdvantage` pure predicates, `COLORS`, and named layout constant groups (`GAMES_COUNTER`, `MINUS_BUTTON`, `RESET_BUTTON`, `ADVANTAGE_DOT`).
+- **Module scope**: `rw()` / `rh()` ratio helpers, the pure predicates `isGameWon` / `isDeuce` / `hasAdvantage` / `displayScore`, `COLORS`, and named layout constant groups (`GAMES_COUNTER`, `MINUS_BUTTON`, `RESET_BUTTON`, `ADVANTAGE_DOT`). Keeping these pure and at module scope is what lets them be extracted and unit-tested in plain Node without the `zeus` toolchain.
 - **State**: `scores` and `games` are two-element arrays indexed by `PLAYER_1` (0, left half) and `PLAYER_2` (1, right half). `opponentOf(player)` flips the index.
 - **`render()`**: rebuilds every widget from state. Individual handlers must never poke a single widget directly.
 - **`settleGame()`**: credits a decided game and clears both scores.
@@ -37,15 +37,16 @@ All geometry is derived from `SCREEN_WIDTH` / `SCREEN_HEIGHT` via `rw()` / `rh()
 - Each half has a games counter near the top; tapping it adds a game manually
 - Two "-1" buttons flank the centre line along the bottom, themed in the opposite half's colour
 - A Reset button sits top-centre and clears all scores and games
-- An advantage dot (`hmUI.widget.CIRCLE`, white) sits vertically centred at the outer edge of each half, created last so it paints above the score buttons
+- An advantage dot (`hmUI.widget.CIRCLE`, white) sits vertically centred just inside the centre dividing line on each half, created last so it paints above the score buttons. Each dot stays strictly on its own player's side of the line
 
 ### Scoring Logic (PAR-11)
 - Tapping a half increments that player's score
 - A game is won at 11, except that once **both** players reach 10 the winner must lead by two (`WIN_BY`). So 11–9 wins, 11–10 does not, 12–10 does
 - On a decided game the winner's games counter increments and both scores reset to 0
 - The win condition is re-evaluated after **every** score change, decrements included, so the board can never rest on an already-won score such as 11–9
-- **Advantage**: when both players are at 10+ and one leads by exactly one point, a white dot appears on that player's half. At 10–10 (or any tie) neither dot shows. Only one dot can ever be lit
-- `-1` reduces the score by 1, or reduces games by 1 when the score is already 0
+- **Advantage**: when both players are at 10+ (`isDeuce`) and one leads by exactly one point, a white dot appears on that player's half. At 10–10 or any tie neither dot shows. Only one dot can ever be lit
+- **Displayed score is not the internal score.** Past deuce the board freezes at 10–10 and the dot carries the lead, the way a tennis scoreboard shows deuce and advantage instead of counting upwards. `scores` keeps incrementing internally so the two-point lead stays detectable, but `displayScore()` is what reaches the widgets. Since a two-point lead settles the game immediately, **the display never shows a number above 10** — layout work can rely on the score being at most two glyphs wide
+- `-1` reduces the score by 1, or reduces games by 1 when the score is already 0. At advantage this drops back to deuce and clears the dot
 - All state persists to localStorage with keys: scores1, scores2, games1, games2. `commit()` on launch settles any already-won board left behind by an older build
 
 ## Development

@@ -1,7 +1,7 @@
 import * as hmUI from '@zos/ui'
 import { localStorage } from '@zos/storage'
 import { getDeviceInfo } from '@zos/device'
-import { gettext } from 'i18n'
+import { getText } from '@zos/i18n'
 
 // ---------------------------------------------------------------------------
 // Device geometry
@@ -40,10 +40,21 @@ const isGameWon = (mine, theirs) => {
   return mine - theirs >= WIN_BY
 }
 
-// Advantage: both players are at 10 or more and this player leads by exactly
-// one point, so the next rally either takes the game or returns to deuce.
-const hasAdvantage = (mine, theirs) =>
-  mine >= DEUCE_SCORE && theirs >= DEUCE_SCORE && mine - theirs === 1
+// Deuce: both players have reached 10, so the game is now decided by a
+// two-point lead rather than by whoever reaches 11 first.
+const isDeuce = (mine, theirs) => mine >= DEUCE_SCORE && theirs >= DEUCE_SCORE
+
+// Advantage: at deuce and leading by exactly one point, so the next rally
+// either takes the game or drops back to deuce.
+const hasAdvantage = (mine, theirs) => isDeuce(mine, theirs) && mine - theirs === 1
+
+// What the scoreboard actually shows. Past deuce the display freezes at 10-10
+// and the advantage dot carries the difference instead, the way a tennis
+// scoreboard shows deuce and advantage rather than counting upwards. The
+// internal score keeps incrementing so the two-point lead stays detectable.
+// Because a two-point lead settles the game immediately, the displayed score
+// never exceeds 10.
+const displayScore = (mine, theirs) => (isDeuce(mine, theirs) ? DEUCE_SCORE : mine)
 
 // ---------------------------------------------------------------------------
 // Persistence
@@ -119,19 +130,18 @@ const RESET_BUTTON = {
   textSize: rw(0.054)
 }
 
-// Advantage dots are vertically centred beside the big score digit, tucked
-// against the outer edge of each half. Two notes on the tight inset: the
-// vertical centre is the widest row of a round display, so the outer edge is
-// not clipped by the bezel there; and the dot only ever appears at 10+, when
-// the score is two digits wide, so it has to stay clear of the wider glyphs.
+// Advantage dots sit just inside the centre dividing line, vertically centred,
+// so the pair reads together in the middle of the screen while each dot stays
+// on its own player's side of the line. The inset clears the score glyphs,
+// which are never more than two digits wide because the display freezes at 10.
 const ADVANTAGE_DOT = {
-  edgeInset: rw(0.052),
+  centerInset: rw(0.047),
   radius: rw(0.024),
   y: Math.floor(SCREEN_HEIGHT / 2)
 }
 const DOT_CENTER_X = [
-  ADVANTAGE_DOT.edgeInset,
-  SCREEN_WIDTH - ADVANTAGE_DOT.edgeInset
+  HALF_WIDTH - ADVANTAGE_DOT.centerInset,
+  HALF_WIDTH + ADVANTAGE_DOT.centerInset
 ]
 
 // CIRCLE visibility is driven by alpha: 0 is fully transparent.
@@ -167,6 +177,9 @@ Page({
         ? { x: 0, w: HALF_WIDTH }
         : { x: RIGHT_X, w: RIGHT_WIDTH }
 
+    const scoreLabel = (player) =>
+      String(displayScore(scores[player], scores[opponentOf(player)]))
+
     // A BUTTON needs its full geometry replayed alongside the new text,
     // otherwise it collapses towards the top-left corner.
     const renderScore = (player) => {
@@ -176,7 +189,7 @@ Page({
         y: 0,
         w,
         h: SCREEN_HEIGHT,
-        text: String(scores[player])
+        text: scoreLabel(player)
       })
     }
 
@@ -272,7 +285,7 @@ Page({
         h: SCREEN_HEIGHT,
         normal_color: theme.bg,
         press_color: theme.press,
-        text: String(scores[player]),
+        text: scoreLabel(player),
         text_size: SCORE_TEXT_SIZE,
         color: theme.text,
         click_func: () => addPoint(player)
@@ -323,7 +336,9 @@ Page({
       h: RESET_BUTTON.h,
       normal_color: COLORS.white,
       press_color: COLORS.resetPress,
-      text: gettext('reset'),
+      // Fall back to a literal so a missing translation can never leave this
+      // button blank, which is how it looked when the i18n lookup failed.
+      text: getText('reset') || 'Reset',
       text_size: RESET_BUTTON.textSize,
       color: COLORS.player1Bg,
       radius: RESET_BUTTON.radius,
