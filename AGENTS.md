@@ -19,25 +19,35 @@ This follows ZeppOS v3 app architecture (backwards compatible with v2):
 - Uses `@zos/storage` localStorage for persisting scores and games between sessions
 - Layout is calculated dynamically based on device dimensions (responsive design)
 - TypeScript type definitions from `@zeppos/device-types` package
-- i18n support for en-US, ru-RU, pl-PL (using .po files in page/i18n/ and app-side/i18n/)
+- i18n support for en-US, ru-RU, pl-PL. Page strings live in `page/i18n/*.po` and are read with `getText` from `@zos/i18n`. **Do not use `import { gettext } from 'i18n'` on the page** — that is the ZeppOS v1/v2 form, it silently returns nothing at API level 2.0+, and it once shipped a blank Reset button. `app-side/index.js` still uses the old `gettext` form because side-service code is a different runtime; `app-side/i18n/` only holds the en-US scaffold, since that module has no user-facing strings.
+
+### Code structure (page/index.js)
+The page is organised as state → render, not as two mirrored player blocks. When changing behaviour, prefer extending these pieces over adding per-player branches:
+- **Module scope**: `rw()` / `rh()` ratio helpers, the pure predicates `isGameWon` / `isDeuce` / `hasAdvantage` / `displayScore`, `COLORS`, and named layout constant groups (`GAMES_COUNTER`, `MINUS_BUTTON`, `RESET_BUTTON`, `ADVANTAGE_DOT`). Keeping these pure and at module scope is what lets them be extracted and unit-tested in plain Node without the `zeus` toolchain.
+- **State**: `scores` and `games` are two-element arrays indexed by `PLAYER_1` (0, left half) and `PLAYER_2` (1, right half). `opponentOf(player)` flips the index.
+- **`render()`**: rebuilds every widget from state. Individual handlers must never poke a single widget directly.
+- **`settleGame()`**: credits a decided game and clears both scores.
+- **`commit()`**: `settleGame()` → `persist()` → `render()`. Every score mutation ends with exactly one `commit()` call, which is what keeps the win condition and the advantage dots consistent no matter which control was tapped.
 
 ### UI Layout (page/index.js)
-The screen is divided vertically into two halves:
-- **Left side (player 1)**: Blue background (#2c79cc), red text (#fc6950)
-  - Large button (0, 0, 233x466) - tap to increment score
-  - Game counter text widget (67, 25) - tap to increment games
-  - Decrement button (150, 400) - "-1" removes points/games
-- **Right side (player 2)**: Red background (#fc6950), blue text (#2c79cc)  
-  - Large button (234, 0, 233x466) - tap to increment score
-  - Game counter text widget (300, 25) - tap to increment games
-  - Decrement button (237, 400) - "-1" removes points/games
-- **Center**: Reset button (193, 10) - clears all scores and games
+All geometry is derived from `SCREEN_WIDTH` / `SCREEN_HEIGHT` via `rw()` / `rh()`; there are no absolute pixel coordinates, including font sizes. The screen is split vertically into two halves:
+- **Left half (player 1)**: blue background (#2c79cc), red score text (#fc6950)
+- **Right half (player 2)**: red background (#fc6950), blue score text (#2c79cc)
+- Each half is a full-height BUTTON that doubles as the background — tap it to add a point
+- Each half has a games counter near the top; tapping it adds a game manually
+- Two "-1" buttons flank the centre line along the bottom, themed in the opposite half's colour
+- A Reset button sits top-centre and clears all scores and games
+- An advantage dot (`hmUI.widget.CIRCLE`, white) sits vertically centred just inside the centre dividing line on each half, created last so it paints above the score buttons. Each dot stays strictly on its own player's side of the line
 
-### Scoring Logic
-- Clicking large buttons increments that player's score
-- When a score reaches 11, that player's game count increments and both scores reset to 0
-- Decrement buttons reduce score by 1, or reduce games by 1 if score is already 0
-- All state persists to localStorage with keys: scores1, scores2, games1, games2
+### Scoring Logic (PAR-11)
+- Tapping a half increments that player's score
+- A game is won at 11, except that once **both** players reach 10 the winner must lead by two (`WIN_BY`). So 11–9 wins, 11–10 does not, 12–10 does
+- On a decided game the winner's games counter increments and both scores reset to 0
+- The win condition is re-evaluated after **every** score change, decrements included, so the board can never rest on an already-won score such as 11–9
+- **Advantage**: when both players are at 10+ (`isDeuce`) and one leads by exactly one point, a white dot appears on that player's half. At 10–10 or any tie neither dot shows. Only one dot can ever be lit
+- **Displayed score is not the internal score.** Past deuce the board freezes at 10–10 and the dot carries the lead, the way a tennis scoreboard shows deuce and advantage instead of counting upwards. `scores` keeps incrementing internally so the two-point lead stays detectable, but `displayScore()` is what reaches the widgets. Since a two-point lead settles the game immediately, **the display never shows a number above 10** — layout work can rely on the score being at most two glyphs wide
+- `-1` reduces the score by 1, or reduces games by 1 when the score is already 0. At advantage this drops back to deuce and clears the dot
+- All state persists to localStorage with keys: scores1, scores2, games1, games2. `commit()` on launch settles any already-won board left behind by an older build
 
 ## Development
 
@@ -59,10 +69,13 @@ When editing code:
 - **Translations**: Add/edit .po files in page/i18n/ or app-side/i18n/
 
 ### Important Constraints
-- Coordinates and sizes are calculated using `SCREEN_WIDTH` and `SCREEN_HEIGHT` to support multiple resolutions
-- Widgets must be created using hmUI.createWidget() with specific types (BUTTON, TEXT, etc.)
+- Coordinates, sizes and font sizes are calculated from `SCREEN_WIDTH` / `SCREEN_HEIGHT` through `rw()` / `rh()` to support both resolution groups. Do not introduce absolute pixel values
+- Widgets must be created using hmUI.createWidget() with specific types (BUTTON, TEXT, CIRCLE, etc.)
+- Updating a BUTTON's text via `setProperty(hmUI.prop.MORE, …)` requires replaying its full `x/y/w/h` geometry, otherwise the widget collapses toward the top-left corner
+- CIRCLE widgets are shown and hidden through their `alpha` property (0 is fully transparent), not `VISIBLE`, which is not in the CIRCLE property access list
 - State management is entirely localStorage-based (no framework)
-- No test framework is currently configured
+- No test framework is currently configured, and the `zeus` CLI is not assumed to be installed. Scoring changes can still be checked by extracting the pure `isGameWon` / `hasAdvantage` predicates and asserting against them in plain Node
+- Anything touching the dots must be verified in the simulator or on-device: the dots are drawn over the tappable score buttons, and glyph widths are font-dependent, so clearance from two-digit scores cannot be confirmed statically
 
 ## Supported Devices (updated Feb 2026)
 
