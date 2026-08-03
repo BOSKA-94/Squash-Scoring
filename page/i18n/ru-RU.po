@@ -1,2 +1,11 @@
 msgid "reset"
 msgstr "Сброс"
+
+msgid "heart_rate"
+msgstr "Пульс"
+
+msgid "match_time"
+msgstr "Время матча"
+
+msgid "swipe_down"
+msgstr "Смахните вниз"

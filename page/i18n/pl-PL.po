@@ -1,2 +1,11 @@
 msgid "reset"
 msgstr "Reset"
+
+msgid "heart_rate"
+msgstr "Tętno"
+
+msgid "match_time"
+msgstr "Czas meczu"
+
+msgid "swipe_down"
+msgstr "Przesuń w dół"

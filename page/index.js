@@ -2,6 +2,17 @@ import * as hmUI from '@zos/ui'
 import { localStorage } from '@zos/storage'
 import { getDeviceInfo } from '@zos/device'
 import { getText } from '@zos/i18n'
+import { HeartRate, Vibrator, VIBRATOR_SCENE_DURATION } from '@zos/sensor'
+import { setPageBrightTime } from '@zos/display'
+import {
+  onGesture,
+  offGesture,
+  GESTURE_UP,
+  GESTURE_DOWN,
+  onDigitalCrown,
+  offDigitalCrown,
+  KEY_HOME
+} from '@zos/interaction'
 
 // ---------------------------------------------------------------------------
 // Device geometry
@@ -62,12 +73,20 @@ const displayScore = (mine, theirs) => (isDeuce(mine, theirs) ? DEUCE_SCORE : mi
 // Key names are kept from earlier versions so saved matches survive upgrades.
 const STORAGE_KEYS = {
   scores: ['scores1', 'scores2'],
-  games: ['games1', 'games2']
+  games: ['games1', 'games2'],
+  matchStartedAt: 'matchStartedAt'
 }
 
 const readCounter = (key) => {
   const stored = parseInt(localStorage.getItem(key) || '0')
   return isNaN(stored) ? 0 : stored
+}
+
+// A timestamp of 0 (or anything unparsable) means "no match in progress yet",
+// which build() treats as a signal to start a fresh one from Date.now().
+const readTimestamp = (key) => {
+  const stored = parseInt(localStorage.getItem(key) || '0')
+  return isNaN(stored) || stored <= 0 ? 0 : stored
 }
 
 // ---------------------------------------------------------------------------
@@ -82,7 +101,9 @@ const COLORS = {
   player2Press: 0xfeb4a8,
   bluePress: 0x5895f0, // deeper blue used by the right "-1" button
   white: 0xffffff,
-  resetPress: 0xfd1302
+  resetPress: 0xfd1302,
+  healthBg: 0x000000,
+  mutedText: 0x9aa5b1 // labels on the Health view; values stay full white
 }
 
 // Each half is painted in that player's colour and lettered in the other's.
@@ -148,6 +169,55 @@ const DOT_CENTER_X = [
 const ALPHA_HIDDEN = 0
 const ALPHA_VISIBLE = 255
 
+// The Health view (heart rate + match timer) lives on the same page as the
+// scoreboard, in its own full-screen GROUP, rather than on a second router
+// page. A second page would tear down and rebuild timers/sensor listeners on
+// every navigation for no benefit, since both views share the same bounds.
+const VIEW_SCOREBOARD = 'scoreboard'
+const VIEW_HEALTH = 'health'
+
+// Amazfit T-Rex 3 / T-Rex 3 Pro have no physical crown, only buttons and the
+// touchscreen, so swiping is the primary, universal way to switch views.
+// Crown rotation is registered too as a bonus on devices that do have one
+// (GTR 4, Balance/Balance 2, Cheetah Pro, Active 2/Active Max). The threshold
+// avoids flipping on the small, involuntary jitter a crown reports at rest.
+const CROWN_DEGREE_THRESHOLD = 50
+
+// Re-armed every score change so the screen stays lit through an active
+// rally, but still returns to the device's normal timeout if the match (or
+// the app) is forgotten about rather than staying lit indefinitely.
+const KEEP_AWAKE_MS = 60000
+
+const HEALTH_LAYOUT = {
+  heartLabelY: rh(0.2),
+  heartLabelH: rh(0.07),
+  labelTextSize: rw(0.062),
+  heartValueY: rh(0.28),
+  heartValueH: rh(0.16),
+  heartValueTextSize: rw(0.17),
+  timeLabelY: rh(0.52),
+  timeLabelH: rh(0.07),
+  timeValueY: rh(0.6),
+  timeValueH: rh(0.14),
+  timeValueTextSize: rw(0.135),
+  hintY: rh(0.84),
+  hintH: rh(0.06),
+  hintTextSize: rw(0.042)
+}
+
+// No live reading yet (e.g. before the first onCurrentChange callback).
+const NO_HEART_RATE_READING = '--'
+
+const formatBpm = (bpm) => (bpm > 0 ? String(bpm) : NO_HEART_RATE_READING)
+const padTwoDigits = (value) => (value < 10 ? `0${value}` : String(value))
+
+const formatDuration = (elapsedMs) => {
+  const totalSeconds = Math.max(0, Math.floor(elapsedMs / 1000))
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
+  return `${padTwoDigits(minutes)}:${padTwoDigits(seconds)}`
+}
+
 Page({
   build() {
     // ----------------------------------------------------------------
@@ -156,17 +226,50 @@ Page({
     const scores = STORAGE_KEYS.scores.map(readCounter)
     const games = STORAGE_KEYS.games.map(readCounter)
 
+    // A missing/zero timestamp means no match is in progress yet. Persisted
+    // (rather than reset on every launch) so the timer survives the app
+    // being backgrounded, and only resets when resetAll() runs.
+    let matchStartedAt = readTimestamp(STORAGE_KEYS.matchStartedAt)
+
     // Widget handles, populated further down. render() depends on all three
     // arrays being filled, so it must not run until build() has created them.
     const scoreWidgets = []
     const gamesWidgets = []
     const dotWidgets = []
+    let hrValueWidget = null
+    let timeValueWidget = null
+
+    // Health view state. The sensor is only started while that view is
+    // visible, since continuous heart rate sampling is one of the more
+    // battery-hungry sensors, and the scoreboard is what's on screen for
+    // nearly the entire match.
+    const heartRate = new HeartRate()
+    const vibrator = new Vibrator()
+    let currentView = VIEW_SCOREBOARD
+    let hrListenerActive = false
+    let crownAccumulator = 0
+    let timerIntervalId = null
 
     const persist = () => {
       PLAYERS.forEach((player) => {
         localStorage.setItem(STORAGE_KEYS.scores[player], String(scores[player]))
         localStorage.setItem(STORAGE_KEYS.games[player], String(games[player]))
       })
+    }
+
+    const persistMatchStartedAt = () => {
+      localStorage.setItem(STORAGE_KEYS.matchStartedAt, String(matchStartedAt))
+    }
+
+    if (!matchStartedAt) {
+      matchStartedAt = Date.now()
+      persistMatchStartedAt()
+    }
+
+    // Re-armed on every score change; see KEEP_AWAKE_MS above for why this is
+    // a moderate window rather than one huge fixed value.
+    const keepScreenAwake = () => {
+      setPageBrightTime({ brightTime: KEEP_AWAKE_MS })
     }
 
     // ----------------------------------------------------------------
@@ -218,22 +321,78 @@ Page({
       })
     }
 
-    // Credit a decided game and clear the scoreboard for the next one. This
+    // ----------------------------------------------------------------
+    // Health view: heart rate + match timer, independent of scores/games.
+    // ----------------------------------------------------------------
+    const updateTimerDisplay = () => {
+      timeValueWidget.setProperty(hmUI.prop.MORE, {
+        text: formatDuration(Date.now() - matchStartedAt)
+      })
+    }
+
+    const onHeartRateChange = () => {
+      hrValueWidget.setProperty(hmUI.prop.MORE, {
+        text: formatBpm(heartRate.getCurrent())
+      })
+    }
+
+    const startHeartRateSensor = () => {
+      if (hrListenerActive) return
+      hrListenerActive = true
+      heartRate.onCurrentChange(onHeartRateChange)
+    }
+
+    const stopHeartRateSensor = () => {
+      if (!hrListenerActive) return
+      hrListenerActive = false
+      heartRate.offCurrentChange(onHeartRateChange)
+    }
+
+    const showScoreboard = () => {
+      if (currentView === VIEW_SCOREBOARD) return
+      currentView = VIEW_SCOREBOARD
+      stopHeartRateSensor()
+      healthGroup.setProperty(hmUI.prop.VISIBLE, false)
+      scoreboardGroup.setProperty(hmUI.prop.VISIBLE, true)
+    }
+
+    const showHealth = () => {
+      if (currentView === VIEW_HEALTH) return
+      currentView = VIEW_HEALTH
+      scoreboardGroup.setProperty(hmUI.prop.VISIBLE, false)
+      healthGroup.setProperty(hmUI.prop.VISIBLE, true)
+      updateTimerDisplay()
+      startHeartRateSensor()
+    }
+
+    // Credit a game to a player, whether it was decided automatically or
+    // bumped manually via the games counter tap. `vibrate` is false only for
+    // the one launch-time settle below, so relaunching the app on an
+    // already-won board never buzzes for a game that isn't being won live.
+    const creditGame = (player, vibrate = true) => {
+      games[player]++
+      if (vibrate) {
+        vibrator.start({ mode: VIBRATOR_SCENE_DURATION })
+      }
+    }
+
+    // Settle a decided game and clear the scoreboard for the next one. This
     // runs after every score change, decrements included, so the app can
     // never rest on an already-won score such as 11-9.
-    const settleGame = () => {
+    const settleGame = (vibrate = true) => {
       PLAYERS.forEach((player) => {
         if (isGameWon(scores[player], scores[opponentOf(player)])) {
-          games[player]++
+          creditGame(player, vibrate)
           scores[PLAYER_1] = 0
           scores[PLAYER_2] = 0
         }
       })
     }
 
-    const commit = () => {
-      settleGame()
+    const commit = (vibrate = true) => {
+      settleGame(vibrate)
       persist()
+      keepScreenAwake()
       render()
     }
 
@@ -257,7 +416,7 @@ Page({
 
     // Manual override for a game the app did not score itself.
     const addGame = (player) => {
-      games[player]++
+      creditGame(player)
       persist()
       render()
     }
@@ -267,18 +426,31 @@ Page({
         scores[player] = 0
         games[player] = 0
       })
+      matchStartedAt = Date.now()
+      persistMatchStartedAt()
       persist()
+      updateTimerDisplay()
       render()
     }
 
     // ----------------------------------------------------------------
-    // Widgets: each half's score button doubles as its background.
+    // Widgets: each half's score button doubles as its background. Both
+    // views below are groups spanning the full screen; since a group's own
+    // origin is (0,0), every coordinate here is unchanged from before this
+    // group wrap, and only one of the two groups is ever visible at a time.
     // ----------------------------------------------------------------
+    const scoreboardGroup = hmUI.createWidget(hmUI.widget.GROUP, {
+      x: 0,
+      y: 0,
+      w: SCREEN_WIDTH,
+      h: SCREEN_HEIGHT
+    })
+
     PLAYERS.forEach((player) => {
       const { x, w } = halfGeometry(player)
       const theme = HALF_THEME[player]
 
-      scoreWidgets[player] = hmUI.createWidget(hmUI.widget.BUTTON, {
+      scoreWidgets[player] = scoreboardGroup.createWidget(hmUI.widget.BUTTON, {
         x,
         y: 0,
         w,
@@ -295,7 +467,7 @@ Page({
     PLAYERS.forEach((player) => {
       const { x } = halfGeometry(player)
 
-      gamesWidgets[player] = hmUI.createWidget(hmUI.widget.TEXT, {
+      gamesWidgets[player] = scoreboardGroup.createWidget(hmUI.widget.TEXT, {
         x: x + GAMES_COUNTER.inset,
         y: GAMES_COUNTER.y,
         w: GAMES_COUNTER.w,
@@ -314,7 +486,7 @@ Page({
     })
 
     PLAYERS.forEach((player) => {
-      hmUI.createWidget(hmUI.widget.BUTTON, {
+      scoreboardGroup.createWidget(hmUI.widget.BUTTON, {
         x: MINUS_BUTTON.x[player],
         y: MINUS_BUTTON.y,
         w: MINUS_BUTTON.w,
@@ -329,7 +501,7 @@ Page({
       })
     })
 
-    hmUI.createWidget(hmUI.widget.BUTTON, {
+    scoreboardGroup.createWidget(hmUI.widget.BUTTON, {
       x: RESET_BUTTON.x,
       y: RESET_BUTTON.y,
       w: RESET_BUTTON.w,
@@ -347,7 +519,7 @@ Page({
 
     // Created last so the dots paint above the full-height score buttons.
     PLAYERS.forEach((player) => {
-      dotWidgets[player] = hmUI.createWidget(hmUI.widget.CIRCLE, {
+      dotWidgets[player] = scoreboardGroup.createWidget(hmUI.widget.CIRCLE, {
         center_x: DOT_CENTER_X[player],
         center_y: ADVANTAGE_DOT.y,
         radius: ADVANTAGE_DOT.radius,
@@ -356,8 +528,142 @@ Page({
       })
     })
 
-    // Draw the restored state. commit() rather than render() so a scoreboard
-    // left in an already-won position by an older build is settled on launch.
-    commit()
+    // ----------------------------------------------------------------
+    // Health view: hidden by default, reached by swiping up (or, on devices
+    // that have one, rotating the crown) from the scoreboard.
+    // ----------------------------------------------------------------
+    const healthGroup = hmUI.createWidget(hmUI.widget.GROUP, {
+      x: 0,
+      y: 0,
+      w: SCREEN_WIDTH,
+      h: SCREEN_HEIGHT
+    })
+
+    healthGroup.createWidget(hmUI.widget.FILL_RECT, {
+      x: 0,
+      y: 0,
+      w: SCREEN_WIDTH,
+      h: SCREEN_HEIGHT,
+      color: COLORS.healthBg
+    })
+
+    healthGroup.createWidget(hmUI.widget.TEXT, {
+      x: 0,
+      y: HEALTH_LAYOUT.heartLabelY,
+      w: SCREEN_WIDTH,
+      h: HEALTH_LAYOUT.heartLabelH,
+      color: COLORS.mutedText,
+      text_size: HEALTH_LAYOUT.labelTextSize,
+      align_h: hmUI.align.CENTER_H,
+      align_v: hmUI.align.CENTER_V,
+      text_style: hmUI.text_style.NONE,
+      text: getText('heart_rate') || 'Heart Rate'
+    })
+
+    hrValueWidget = healthGroup.createWidget(hmUI.widget.TEXT, {
+      x: 0,
+      y: HEALTH_LAYOUT.heartValueY,
+      w: SCREEN_WIDTH,
+      h: HEALTH_LAYOUT.heartValueH,
+      color: COLORS.white,
+      text_size: HEALTH_LAYOUT.heartValueTextSize,
+      align_h: hmUI.align.CENTER_H,
+      align_v: hmUI.align.CENTER_V,
+      text_style: hmUI.text_style.NONE,
+      text: formatBpm(heartRate.getLast())
+    })
+
+    healthGroup.createWidget(hmUI.widget.TEXT, {
+      x: 0,
+      y: HEALTH_LAYOUT.timeLabelY,
+      w: SCREEN_WIDTH,
+      h: HEALTH_LAYOUT.timeLabelH,
+      color: COLORS.mutedText,
+      text_size: HEALTH_LAYOUT.labelTextSize,
+      align_h: hmUI.align.CENTER_H,
+      align_v: hmUI.align.CENTER_V,
+      text_style: hmUI.text_style.NONE,
+      text: getText('match_time') || 'Match Time'
+    })
+
+    timeValueWidget = healthGroup.createWidget(hmUI.widget.TEXT, {
+      x: 0,
+      y: HEALTH_LAYOUT.timeValueY,
+      w: SCREEN_WIDTH,
+      h: HEALTH_LAYOUT.timeValueH,
+      color: COLORS.white,
+      text_size: HEALTH_LAYOUT.timeValueTextSize,
+      align_h: hmUI.align.CENTER_H,
+      align_v: hmUI.align.CENTER_V,
+      text_style: hmUI.text_style.NONE,
+      text: formatDuration(Date.now() - matchStartedAt)
+    })
+
+    healthGroup.createWidget(hmUI.widget.TEXT, {
+      x: 0,
+      y: HEALTH_LAYOUT.hintY,
+      w: SCREEN_WIDTH,
+      h: HEALTH_LAYOUT.hintH,
+      color: COLORS.mutedText,
+      text_size: HEALTH_LAYOUT.hintTextSize,
+      align_h: hmUI.align.CENTER_H,
+      align_v: hmUI.align.CENTER_V,
+      text_style: hmUI.text_style.NONE,
+      text: getText('swipe_down') || 'Swipe down'
+    })
+
+    healthGroup.setProperty(hmUI.prop.VISIBLE, false)
+
+    // The match timer ticks on wall-clock time independent of the
+    // scoreboard's own state, so it keeps a visible Health view up to date
+    // even when nothing else has triggered a render().
+    timerIntervalId = setInterval(updateTimerDisplay, 1000)
+
+    // Swiping is the primary, universal trigger (see CROWN_DEGREE_THRESHOLD
+    // above for why the crown can't be the only one). Gestures this page
+    // doesn't care about keep whatever default behaviour they already had.
+    onGesture({
+      callback: (event) => {
+        if (event === GESTURE_UP) {
+          showHealth()
+          return true
+        }
+        if (event === GESTURE_DOWN) {
+          showScoreboard()
+          return true
+        }
+        return false
+      }
+    })
+
+    onDigitalCrown({
+      callback: (key, degree) => {
+        if (key !== KEY_HOME) return
+        crownAccumulator += degree
+        if (crownAccumulator >= CROWN_DEGREE_THRESHOLD) {
+          crownAccumulator = 0
+          showHealth()
+        } else if (crownAccumulator <= -CROWN_DEGREE_THRESHOLD) {
+          crownAccumulator = 0
+          showScoreboard()
+        }
+      }
+    })
+
+    this.cleanup = () => {
+      clearInterval(timerIntervalId)
+      stopHeartRateSensor()
+      offGesture()
+      offDigitalCrown()
+    }
+
+    // Draw the restored state. commit(false) rather than render() so a
+    // scoreboard left in an already-won position by an older build is
+    // settled on launch, without treating that as a game being won live.
+    commit(false)
+  },
+
+  onDestroy() {
+    this.cleanup && this.cleanup()
   }
 })
